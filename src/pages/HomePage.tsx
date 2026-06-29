@@ -171,7 +171,7 @@ export function HomePage() {
 
       {/* CTA */}
       <div className="px-4 mt-6 mb-12">
-        <Button variant="primary" size="lg" fullWidth onClick={() => navigate('/my-trip')}>
+        <Button variant="primary" size="lg" fullWidth onClick={() => navigate('/day/1')}>
           🚗 开始这段旅程
         </Button>
         <p className="text-center text-xs text-gray-400 mt-2">
