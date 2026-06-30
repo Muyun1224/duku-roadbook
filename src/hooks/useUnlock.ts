@@ -3,7 +3,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
-const PAID_ROUTES = ['kanas-loop', 'southern-xinjiang']; // 需要付费的路线 ID
+// 付费路线列表 — 为空时所有路线免费
+// 想启用付费时，把路线 ID 加回来：['kanas-loop', 'southern-xinjiang']
+const PAID_ROUTES: string[] = [];
 
 // 生成或读取用户唯一 ID（存在 localStorage，不清除）
 function getUserId(): string {
