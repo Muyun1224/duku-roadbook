@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { dukuDays } from '@/data/dukuRoute';
+import { getRoute } from '@/data/routes';
 import { RouteMap } from '@/components/RouteMap';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
@@ -8,15 +8,16 @@ import { useAmapPOI } from '@/hooks/useAmapPOI';
 import { getAmapKey, setAmapKey, type AmapPOI } from '@/services/amapService';
 import { NavButton } from '@/components/NavButton';
 
-const dayColors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
-const dayEmojis = ['🏔️', '🌿', '🌅', '🏜️'];
+const dayColors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
+const dayEmojis = ['🏔️', '🌿', '🌅', '🏜️', '🏞️', '🌌', '🌊', '🗺️'];
 
 export function DayDetailPage() {
-  const { dayNum } = useParams<{ dayNum: string }>();
+  const { routeId, dayNum } = useParams<{ routeId: string; dayNum: string }>();
   const navigate = useNavigate();
+  const route = getRoute(routeId || 'duku-highway');
   const dayIndex = Number(dayNum) - 1;
-  const day = dukuDays[dayIndex];
-  const color = dayColors[dayIndex];
+  const day = route?.days[dayIndex];
+  const color = dayColors[dayIndex % dayColors.length];
 
   // Amap live data — search center = midpoint of the day's route
   const amapLat = day ? day.stops[Math.floor(day.stops.length / 2)]?.lat ?? 43.0 : 43.0;
@@ -24,57 +25,61 @@ export function DayDetailPage() {
   const { hotels, restaurants, loading: amapLoading, hasKey, error: amapError } = useAmapPOI(amapLat, amapLng);
 
   // Daily notes — load from localStorage
+  const storageKey = route ? `roadbook-notes-${route.meta.id}` : 'roadbook-notes';
   const [todayNote, setTodayNote] = useState('');
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem('duku-trip-notes');
+    const stored = localStorage.getItem(storageKey);
     const notes: Record<string, string> = stored ? JSON.parse(stored) : {};
     setTodayNote(notes[String(day?.dayNumber)] || '');
     setSaved(false);
-  }, [dayNum]);
+  }, [dayNum, routeId]);
 
   const handleSaveNote = useCallback(() => {
-    const stored = localStorage.getItem('duku-trip-notes');
+    const stored = localStorage.getItem(storageKey);
     const notes: Record<string, string> = stored ? JSON.parse(stored) : {};
     notes[String(day?.dayNumber || 0)] = todayNote;
-    localStorage.setItem('duku-trip-notes', JSON.stringify(notes));
+    localStorage.setItem(storageKey, JSON.stringify(notes));
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
-  }, [todayNote, day]);
+  }, [todayNote, day, storageKey]);
 
   const handleCompleteDay = useCallback(() => {
     // Auto-save before moving on
-    const stored = localStorage.getItem('duku-trip-notes');
+    const stored = localStorage.getItem(storageKey);
     const notes: Record<string, string> = stored ? JSON.parse(stored) : {};
     notes[String(day?.dayNumber || 0)] = todayNote;
-    localStorage.setItem('duku-trip-notes', JSON.stringify(notes));
+    localStorage.setItem(storageKey, JSON.stringify(notes));
 
     const dayIndex = Number(dayNum) - 1;
-    if (dayIndex < dukuDays.length - 1) {
-      navigate(`/day/${dayIndex + 2}`);
+    const parentId = routeId || 'duku-highway';
+    if (route && dayIndex < route.days.length - 1) {
+      navigate(`/route/${parentId}/day/${dayIndex + 2}`);
     } else {
-      navigate('/journal');
+      navigate(`/route/${parentId}/journal`);
     }
-  }, [todayNote, day, dayNum, navigate]);
+  }, [todayNote, day, dayNum, navigate, route, routeId]);
 
-  if (!day) {
+  if (!route || !day) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-400 mb-4">找不到该日行程</p>
-          <Button variant="secondary" onClick={() => navigate('/')}>返回首页</Button>
+          <Button variant="secondary" onClick={() => navigate('/')}>返回路线选择</Button>
         </div>
       </div>
     );
   }
+
+  const parentId = route.meta.id;
 
   return (
     <div className="min-h-screen pb-24">
       {/* Header */}
       <div className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-100">
         <div className="flex items-center justify-between px-4 py-3">
-          <button onClick={() => navigate('/')} className="text-gray-500 active:text-gray-800">
+          <button onClick={() => navigate(`/route/${parentId}`)} className="text-gray-500 active:text-gray-800">
             <span className="text-lg">←</span>
           </button>
           <div className="text-center">
@@ -87,17 +92,17 @@ export function DayDetailPage() {
 
       {/* Day Navigation */}
       <div className="flex overflow-x-auto scroll-container bg-white border-b border-gray-50 px-2 py-2 gap-1">
-        {dukuDays.map((d, i) => (
+        {route.days.map((d, i) => (
           <button
             key={i}
-            onClick={() => navigate(`/day/${d.dayNumber}`)}
+            onClick={() => navigate(`/route/${parentId}/day/${d.dayNumber}`)}
             className="flex-shrink-0 px-4 py-2 rounded-full text-xs font-medium transition-colors"
             style={{
               backgroundColor: i === dayIndex ? color : '#f8fafc',
               color: i === dayIndex ? '#fff' : '#94a3b8',
             }}
           >
-            D{d.dayNumber} {d.route.from.split('→')[0].trim()}→{d.route.to}
+            D{d.dayNumber} {d.route.from}
           </button>
         ))}
       </div>
@@ -107,7 +112,7 @@ export function DayDetailPage() {
         <div className="rounded-2xl overflow-hidden" style={{ backgroundColor: color + '10' }}>
           <div className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl">{dayEmojis[dayIndex]}</span>
+              <span className="text-2xl">{dayEmojis[dayIndex % dayEmojis.length]}</span>
               <div>
                 <h2 className="text-lg font-bold text-gray-800">{day.title}</h2>
                 <p className="text-sm" style={{ color: color }}>{day.subtitle}</p>
@@ -375,11 +380,11 @@ export function DayDetailPage() {
 
         <div className="flex gap-3">
           {dayIndex > 0 && (
-            <Button variant="secondary" size="md" onClick={() => navigate(`/day/${dayIndex}`)}>
+            <Button variant="secondary" size="md" onClick={() => navigate(`/route/${parentId}/day/${dayIndex}`)}>
               ← 回看
             </Button>
           )}
-          {dayIndex < dukuDays.length - 1 ? (
+          {dayIndex < route.days.length - 1 ? (
             <Button variant="primary" size="md" fullWidth onClick={handleCompleteDay}>
               ✅ 完成今日 · 前往第{dayIndex + 2}天 →
             </Button>

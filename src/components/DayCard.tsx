@@ -1,5 +1,5 @@
 import { Card } from '@/components/ui/Card';
-import type { DayRoute } from '@/data/dukuRoute';
+import type { DayRoute } from '@/types/route';
 
 interface DayCardProps {
   day: DayRoute;

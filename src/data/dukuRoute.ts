@@ -1,83 +1,9 @@
 // ─── 独库公路完整路书数据 ───
 // Duku Highway Roadbook — 独山子 → 库车，翻越天山
 
-export interface Stop {
-  type: 'viewpoint' | 'attraction' | 'rest' | 'photo';
-  name: string;
-  lat: number;
-  lng: number;
-  description: string;
-  duration: string;  // 建议停留时间
-  tips?: string;
-}
+import type { RouteMeta, DayRoute, RouteData } from '@/types/route';
 
-export interface Meal {
-  name: string;
-  type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
-  description: string;
-  mustTry?: string;
-  avgPrice: string;
-}
-
-export interface Accommodation {
-  name: string;
-  type: 'hotel' | 'guesthouse' | 'camp' | 'hostel';
-  priceRange: string;
-  description: string;
-  tip?: string;
-}
-
-export interface DayRoute {
-  dayNumber: number;
-  title: string;           // e.g. "独山子 → 乔尔玛"
-  subtitle: string;        // e.g. "穿越哈希勒根达坂"
-  distanceKm: number;
-  drivingTimeMin: number;
-  elevation: {
-    start: number;         // 出发海拔(m)
-    end: number;           // 到达海拔(m)
-    max: number;           // 最高点海拔(m)
-    maxPoint: string;      // 最高点名称
-  };
-  description: string;     // 当日概述
-  route: {
-    from: string;
-    to: string;
-    via: string[];         // 途经主要地点
-  };
-  stops: Stop[];           // 沿途停靠点
-  meals: Meal[];           // 推荐餐饮
-  accommodation: Accommodation[]; // 推荐住宿
-  roadCondition: string;   // 路况说明
-  warnings: string[];      // 注意事项
-  highlight: string;       // 当日亮点（一行字）
-}
-
-export interface RouteMeta {
-  id: string;
-  name: string;
-  subtitle: string;
-  region: string;
-  totalDistanceKm: number;
-  totalDays: number;
-  difficulty: 'easy' | 'moderate' | 'challenging';
-  bestSeason: string;
-  seasonMonths: string;
-  highestPoint: { name: string; elevation: number };
-  startPoint: { name: string; lat: number; lng: number };
-  endPoint: { name: string; lat: number; lng: number };
-  description: string;
-  highlights: string[];
-  packingTips: string[];
-  budget: {
-    economy: number;
-    comfort: number;
-    luxury: number;
-    perPerson: boolean;
-    includes: string[];
-    excludes: string[];
-  };
-}
+export type { Stop, Meal, Accommodation, DayRoute, RouteMeta, RouteData } from '@/types/route';
 
 export const dukuRouteMeta: RouteMeta = {
   id: 'duku-highway',
@@ -92,6 +18,7 @@ export const dukuRouteMeta: RouteMeta = {
   highestPoint: { name: '哈希勒根达坂', elevation: 3400 },
   startPoint: { name: '独山子', lat: 44.3272, lng: 84.8835 },
   endPoint: { name: '库车', lat: 41.7179, lng: 82.9623 },
+  coverEmoji: '🛣️',
   description: '独库公路，国道217线独山子至库车段，全长561公里，纵贯天山南北。'
     + '它连接北疆与南疆，翻越哈希勒根、玉希莫勒盖、铁力买提三座达坂，'
     + '横跨峡谷、雪山、草原、雅丹、丹霞等多种地貌。'
@@ -219,6 +146,7 @@ export const dukuDays: DayRoute[] = [
       '加油站：独山子加满油，乔尔玛无加油站',
     ],
     highlight: '哈希勒根达坂——站在3400米看雪山就在手边',
+    pathCoords: [[44.3272, 84.8835], [44.2000, 84.6500], [43.9500, 84.4500], [43.8500, 84.3500], [43.6500, 84.3000]],
   },
   {
     dayNumber: 2,
@@ -306,6 +234,7 @@ export const dukuDays: DayRoute[] = [
       '草原天气多变，带雨具',
     ],
     highlight: '唐布拉百里画廊——100公里的绿色画卷',
+    pathCoords: [[43.6500, 84.3000], [43.5800, 84.1500], [43.4500, 84.0500], [43.3500, 83.9500]],
   },
   {
     dayNumber: 3,
@@ -394,6 +323,7 @@ export const dukuDays: DayRoute[] = [
       '镇上住宿极度紧张，务必提前订',
     ],
     highlight: '九曲十八弯落日——看到九个太阳需要运气，但一个太阳已经足够震撼',
+    pathCoords: [[43.3500, 83.9500], [43.2500, 84.0000], [43.0500, 84.1000]],
   },
   {
     dayNumber: 4,
@@ -483,5 +413,11 @@ export const dukuDays: DayRoute[] = [
       '库车是南疆重要城市，治安很好，但尊重当地民族风俗',
     ],
     highlight: '穿过铁力买提隧道——前一秒是北欧，后一秒是中东',
+    pathCoords: [[43.0500, 84.1000], [42.6000, 83.5000], [42.4500, 83.3000], [42.1000, 83.0000], [41.7179, 82.9623]],
   },
 ];
+
+export const dukuHighway: RouteData = {
+  meta: dukuRouteMeta,
+  days: dukuDays,
+};

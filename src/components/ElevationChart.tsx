@@ -1,4 +1,4 @@
-import type { DayRoute } from '@/data/dukuRoute';
+import type { DayRoute } from '@/types/route';
 
 interface ElevationChartProps {
   days: DayRoute[];

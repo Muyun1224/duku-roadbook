@@ -1,25 +1,45 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { dukuRouteMeta, dukuDays } from '@/data/dukuRoute';
+import { useParams, useNavigate } from 'react-router-dom';
+import { getRoute } from '@/data/routes';
 import { Card } from '@/components/ui/Card';
 import { getAmapKey, setAmapKey } from '@/services/amapService';
 
-const dayEmojis = ['🏔️', '🌿', '🌅', '🏜️'];
+const dayEmojis = ['🏔️', '🌿', '🌅', '🏜️', '🏞️', '🌌', '🌊', '🗺️'];
 
 export function JournalPage() {
+  const { routeId } = useParams<{ routeId: string }>();
   const navigate = useNavigate();
+  const route = getRoute(routeId || 'duku-highway');
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [amapKey, setAmapKeyLocal] = useState(getAmapKey());
 
+  const storageKey = route ? `roadbook-notes-${route.meta.id}` : 'roadbook-notes';
+
   useEffect(() => {
-    const stored = localStorage.getItem('duku-trip-notes');
+    const stored = localStorage.getItem(storageKey);
     if (stored) {
       try { setNotes(JSON.parse(stored)); } catch { /* */ }
     }
-  }, []);
+  }, [storageKey]);
 
-  const completedDays = dukuDays.filter(d => notes[String(d.dayNumber)]?.trim());
-  const progress = Math.round((completedDays.length / dukuDays.length) * 100);
+  if (!route) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center px-4">
+          <span className="text-4xl mb-4 block">📔</span>
+          <p className="text-gray-600 mb-1 font-semibold">找不到该路线</p>
+          <button onClick={() => navigate('/')} className="inline-block px-5 py-2 bg-blue-600 text-white text-sm font-medium rounded-full">
+            返回路线选择
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const { meta, days } = route;
+  const parentId = meta.id;
+  const completedDays = days.filter(d => notes[String(d.dayNumber)]?.trim());
+  const progress = Math.round((completedDays.length / days.length) * 100);
 
   const handleSaveKey = () => {
     setAmapKey(amapKey);
@@ -30,12 +50,12 @@ export function JournalPage() {
       {/* Header */}
       <div className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-gray-100">
         <div className="flex items-center justify-between px-4 py-3">
-          <button onClick={() => navigate('/')} className="text-gray-500 active:text-gray-800">
+          <button onClick={() => navigate(`/route/${parentId}`)} className="text-gray-500 active:text-gray-800">
             <span className="text-lg">←</span>
           </button>
           <div className="text-center">
             <div className="text-sm font-semibold text-gray-800">旅行日记</div>
-            <div className="text-xs text-gray-400">{dukuRouteMeta.name}</div>
+            <div className="text-xs text-gray-400">{meta.name}</div>
           </div>
           <div className="w-8" />
         </div>
@@ -55,22 +75,22 @@ export function JournalPage() {
             />
           </div>
           <p className="text-xs text-gray-400 mt-2">
-            {completedDays.length}/{dukuDays.length} 天已完成
-            {completedDays.length === dukuDays.length ? ' 🎉 恭喜走完独库公路！' : ''}
+            {completedDays.length}/{days.length} 天已完成
+            {completedDays.length === days.length ? ` 🎉 恭喜走完${meta.name}！` : ''}
           </p>
         </div>
 
         {/* Day notes */}
         <h3 className="text-sm font-semibold text-gray-700 mb-3">📝 每日记录</h3>
         <div className="space-y-3">
-          {dukuDays.map((day, i) => {
+          {days.map((day, i) => {
             const note = notes[String(day.dayNumber)] || '';
             const isCompleted = !!note.trim();
 
             return (
               <Card key={day.dayNumber}>
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="text-lg">{dayEmojis[i]}</span>
+                  <span className="text-lg">{dayEmojis[i % dayEmojis.length]}</span>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-semibold text-gray-800">
@@ -95,7 +115,7 @@ export function JournalPage() {
                   </div>
                 ) : (
                   <button
-                    onClick={() => navigate(`/day/${day.dayNumber}`)}
+                    onClick={() => navigate(`/route/${parentId}/day/${day.dayNumber}`)}
                     className="text-sm text-blue-500 mt-2 inline-block hover:text-blue-700"
                   >
                     🚗 开始这一天 →
@@ -126,19 +146,19 @@ export function JournalPage() {
           </div>
         </div>
 
-        {completedDays.length === dukuDays.length && (
+        {completedDays.length === days.length && (
           <div className="bg-gradient-to-r from-yellow-400 to-orange-400 rounded-2xl p-4 mt-4 text-white text-center">
             <p className="text-2xl mb-1">🏆</p>
-            <p className="font-bold text-lg">恭喜完成独库公路！</p>
+            <p className="font-bold text-lg">恭喜完成{meta.name}！</p>
             <p className="text-sm text-yellow-100 mt-1">
-              {dukuRouteMeta.totalDistanceKm}公里 · {dukuRouteMeta.totalDays}天 · 独山子 → 库车
+              {meta.totalDistanceKm}公里 · {meta.totalDays}天 · {meta.startPoint.name} → {meta.endPoint.name}
             </p>
           </div>
         )}
 
         <div className="mt-6 mb-12">
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate(`/route/${parentId}`)}
             className="w-full py-3 text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
             ← 返回路书首页

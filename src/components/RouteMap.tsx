@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import type { DayRoute } from '@/data/dukuRoute';
+import type { DayRoute } from '@/types/route';
 
 interface RouteMapProps {
   days: DayRoute[];
@@ -9,19 +9,8 @@ interface RouteMapProps {
   className?: string;
 }
 
-// Route points for each day (simplified key coordinates along Duku Highway)
-const dayPathCoords: [number, number][][] = [
-  // Day 1: 独山子 → 乔尔玛
-  [[44.3272, 84.8835], [44.2000, 84.6500], [43.9500, 84.4500], [43.8500, 84.3500], [43.6500, 84.3000]],
-  // Day 2: 乔尔玛 → 那拉提
-  [[43.6500, 84.3000], [43.5800, 84.1500], [43.4500, 84.0500], [43.3500, 83.9500]],
-  // Day 3: 那拉提 → 巴音布鲁克
-  [[43.3500, 83.9500], [43.2500, 84.0000], [43.0500, 84.1000]],
-  // Day 4: 巴音布鲁克 → 库车
-  [[43.0500, 84.1000], [42.6000, 83.5000], [42.4500, 83.3000], [42.1000, 83.0000], [41.7179, 82.9623]],
-];
-
-const dayColors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'];
+// Day colors used for route lines — cycle through if more than 7 days
+const dayColors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
 
 // Amap 高德瓦片 — 国内秒开，中文标签，无需 API Key
 const TILE_URL = 'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}';
@@ -70,10 +59,15 @@ export function RouteMap({ days, activeDay = -1, className }: RouteMapProps) {
       }
     });
 
-    dayPathCoords.forEach((coords, i) => {
+    // Use pathCoords from day data
+    days.forEach((day, i) => {
       if (activeDay !== -1 && i !== activeDay) return;
 
-      const color = activeDay === -1 ? dayColors[i] : dayColors[activeDay];
+      const coords = day.pathCoords;
+      if (!coords || coords.length === 0) return;
+
+      const colorIdx = activeDay === -1 ? i : activeDay;
+      const color = dayColors[colorIdx % dayColors.length];
       const opacity = activeDay === -1 ? 0.8 : 1;
 
       // Route line
@@ -100,8 +94,8 @@ export function RouteMap({ days, activeDay = -1, className }: RouteMapProps) {
 
     // Fit bounds
     const activeCoords = activeDay === -1
-      ? dayPathCoords.flat()
-      : dayPathCoords[activeDay];
+      ? days.flatMap(d => d.pathCoords || [])
+      : (days[activeDay]?.pathCoords || []);
     if (activeCoords.length > 0) {
       map.fitBounds(L.latLngBounds(activeCoords as [number, number][]), { padding: [30, 30] });
     }
