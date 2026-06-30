@@ -3,12 +3,14 @@ import { RouteSelectPage } from '@/pages/RouteSelectPage';
 import { HomePage } from '@/pages/HomePage';
 import { DayDetailPage } from '@/pages/DayDetailPage';
 import { JournalPage } from '@/pages/MyTripPage';
+import { AdminPage } from '@/pages/AdminPage';
 
 function App() {
   return (
     <HashRouter>
       <Routes>
         <Route path="/" element={<RouteSelectPage />} />
+        <Route path="/admin" element={<AdminPage />} />
         <Route path="/route/:routeId" element={<HomePage />} />
         <Route path="/route/:routeId/day/:dayNum" element={<DayDetailPage />} />
         <Route path="/route/:routeId/journal" element={<JournalPage />} />

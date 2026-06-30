@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/Card';
 import { useAmapPOI } from '@/hooks/useAmapPOI';
 import { getAmapKey, setAmapKey, type AmapPOI } from '@/services/amapService';
 import { NavButton } from '@/components/NavButton';
+import { useUnlock } from '@/hooks/useUnlock';
+import { UnlockGate } from '@/components/UnlockGate';
 
 const dayColors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F97316'];
 const dayEmojis = ['🏔️', '🌿', '🌅', '🏜️', '🏞️', '🌌', '🌊', '🗺️'];
@@ -14,10 +16,15 @@ const dayEmojis = ['🏔️', '🌿', '🌅', '🏜️', '🏞️', '🌌', '�
 export function DayDetailPage() {
   const { routeId, dayNum } = useParams<{ routeId: string; dayNum: string }>();
   const navigate = useNavigate();
-  const route = getRoute(routeId || 'duku-highway');
+  const parentId = routeId || 'duku-highway';
+  const route = getRoute(parentId);
   const dayIndex = Number(dayNum) - 1;
   const day = route?.days[dayIndex];
   const color = dayColors[dayIndex % dayColors.length];
+
+  // 付费检查：Day 1 免费预览，Day 2+ 需要解锁
+  const { isUnlocked, isChecking, error: unlockError, unlock } = useUnlock(parentId);
+  const needsUnlock = route && dayIndex > 0 && !isUnlocked && !isChecking;
 
   // Amap live data — search center = midpoint of the day's route
   const amapLat = day ? day.stops[Math.floor(day.stops.length / 2)]?.lat ?? 43.0 : 43.0;
@@ -72,7 +79,26 @@ export function DayDetailPage() {
     );
   }
 
-  const parentId = route.meta.id;
+  // 付费门：Day 1 免费，Day 2+ 弹出解锁弹窗
+  if (needsUnlock) {
+    return (
+      <UnlockGate
+        routeId={parentId}
+        routeName={route.meta.name}
+        onUnlock={unlock}
+        error={unlockError}
+      />
+    );
+  }
+
+  // 正在检查解锁状态时显示 loading
+  if (isChecking && dayIndex > 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-pulse text-gray-400 text-sm">加载中...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen pb-24">

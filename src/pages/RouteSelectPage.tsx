@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { allRoutes } from '@/data/routes';
+import { isFreeRoute, getRoutePrice } from '@/hooks/useUnlock';
 
 const difficultyLabel: Record<string, string> = {
   easy: '轻松',
@@ -43,7 +44,14 @@ export function RouteSelectPage() {
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 px-4 py-5 flex items-center gap-4">
                   <span className="text-4xl">{meta.coverEmoji}</span>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-gray-800 text-base">{meta.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-gray-800 text-base">{meta.name}</h3>
+                      {isFreeRoute(meta.id) ? (
+                        <span className="text-xs px-1.5 py-0.5 bg-green-100 text-green-700 rounded-full font-medium">免费</span>
+                      ) : (
+                        <span className="text-xs px-1.5 py-0.5 bg-orange-100 text-orange-600 rounded-full font-medium">¥{getRoutePrice(meta.id)}</span>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-500 mt-0.5">{meta.subtitle}</p>
                   </div>
                 </div>
